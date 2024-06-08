@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import '@toast-ui/calendar/dist/toastui-calendar.min.css';
+import LoginComponent from './components/Login'
 
 const MyCalendar = dynamic(() => import('@/app/components/Calendar'), { ssr: false });
 
@@ -15,6 +16,7 @@ export default function Home() {
         <p className="text-gray-600 dark:text-gray-400">
           Let calendar tell you what to do today instead of you telling it.
         </p>
+        <LoginComponent />
       </header>
       
       <div className="w-full max-w-4xl bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
