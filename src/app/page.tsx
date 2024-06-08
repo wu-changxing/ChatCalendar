@@ -1,10 +1,11 @@
+"use client"
 // app/page.tsx
-"use client";
 import dynamic from 'next/dynamic';
 import '@toast-ui/calendar/dist/toastui-calendar.min.css';
 import LoginComponent from './components/Login';
 import useAuthStore from '../../authStore';
 import ImportHealthDataButton from './components/ImportHealthData'
+import Calendar from '@/app/components/Calendar'
 const MyCalendar = dynamic(() => import('@/app/components/Calendar'), { ssr: false });
 
 export default function Home() {
@@ -29,7 +30,7 @@ export default function Home() {
       )}
       <footer className="mt-12 text-gray-600 dark:text-gray-400">
         <p>
-          Built with <a href="https://nextjs.org" className="text-blue-500 dark:text-blue-400 hover:underline">Next.js</a> and <a href="https://github.com/nhn/toast-ui.react-calendar" className="text-blue-500 dark:text-blue-400 hover:underline">TOAST UI Calendar</a>.
+          Built with <a href="https://nextjs.org" className="text-blue-500 dark:text-blue-400 hover:underline">Vercel</a> and <a href="https://github.com/nhn/toast-ui.react-calendar" className="text-blue-500 dark:text-blue-400 hover:underline">Gemini</a>.
         </p>
       </footer>
     </main>

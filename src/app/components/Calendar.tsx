@@ -1,248 +1,286 @@
-"use client";
+import FullCalendar from '@fullcalendar/react'
+import dayGridPlugin from '@fullcalendar/daygrid'
+import interactionPlugin, { Draggable, DropArg } from '@fullcalendar/interaction'
+import timeGridPlugin from '@fullcalendar/timegrid'
+import { Fragment, useEffect, useState } from 'react'
+import { Dialog, Transition } from '@headlessui/react'
+import { CheckIcon, ExclamationTriangleIcon } from '@heroicons/react/20/solid'
+import { EventSourceInput } from '@fullcalendar/core'
 
-import { useEffect, useRef, useState, useCallback, ChangeEvent, MouseEvent } from 'react';
-import Calendar from '@toast-ui/calendar';
-import { TZDate } from '@toast-ui/calendar';
-import '@toast-ui/calendar/dist/toastui-calendar.min.css';
-import 'tui-date-picker/dist/tui-date-picker.css';
-import 'tui-time-picker/dist/tui-time-picker.css';
+interface Event {
+  title: string
+  start: Date | string
+  allDay: boolean
+  id: number
+}
 
-type ViewType = 'month' | 'week' | 'day';
-
-const today = new TZDate();
-
-const initialCalendars = [
-  {
-    id: '0',
-    name: 'Private',
-    backgroundColor: '#9e5fff',
-    borderColor: '#9e5fff',
-    dragBackgroundColor: '#9e5fff',
-  },
-  {
-    id: '1',
-    name: 'Company',
-    backgroundColor: '#00a9ff',
-    borderColor: '#00a9ff',
-    dragBackgroundColor: '#00a9ff',
-  },
-];
-
-const initialEvents = [
-  {
-    id: '1',
-    calendarId: '0',
-    title: 'TOAST UI Calendar Study',
-    category: 'time',
-    start: today,
-    end: new TZDate(new Date().setHours(today.getHours() + 3)),
-  },
-  {
-    id: '2',
-    calendarId: '0',
-    title: 'Practice',
-    category: 'milestone',
-    start: new TZDate(today.getFullYear(), today.getMonth(), today.getDate() + 1),
-    end: new TZDate(today.getFullYear(), today.getMonth(), today.getDate() + 1),
-    isReadOnly: true,
-  },
-  {
-    id: '3',
-    calendarId: '0',
-    title: 'FE Workshop',
-    category: 'allday',
-    start: new TZDate(today.getFullYear(), today.getMonth(), today.getDate() - 2),
-    end: new TZDate(today.getFullYear(), today.getMonth(), today.getDate() - 1),
-    isReadOnly: true,
-  },
-  {
-    id: '4',
-    calendarId: '0',
-    title: 'Report',
-    category: 'time',
-    start: today,
-    end: new TZDate(new Date().setHours(today.getHours() + 1)),
-  },
-];
-
-const viewModeOptions = [
-  {
-    title: 'Monthly',
-    value: 'month',
-  },
-  {
-    title: 'Weekly',
-    value: 'week',
-  },
-  {
-    title: 'Daily',
-    value: 'day',
-  },
-];
-
-const MyCalendar = () => {
-  const calendarRef = useRef<HTMLDivElement>(null);
-  const [selectedDateRangeText, setSelectedDateRangeText] = useState('');
-  const [selectedView, setSelectedView] = useState<ViewType>('month');
-  const [calendarInstance, setCalendarInstance] = useState<Calendar | null>(null);
-
-  const getCalInstance = useCallback(() => {
-    return calendarInstance;
-  }, [calendarInstance]);
-
-  const updateRenderRangeText = useCallback(() => {
-    const calInstance = getCalInstance();
-    if (!calInstance) {
-      setSelectedDateRangeText('');
-      return;
-    }
-
-    const viewName = calInstance.getViewName();
-    const calDate = calInstance.getDate();
-    const rangeStart = calInstance.getDateRangeStart();
-    const rangeEnd = calInstance.getDateRangeEnd();
-
-    let year = calDate.getFullYear();
-    let month = calDate.getMonth() + 1;
-    let date = calDate.getDate();
-    let dateRangeText: string;
-
-    switch (viewName) {
-      case 'month': {
-        dateRangeText = `${year}-${month}`;
-        break;
-      }
-      case 'week': {
-        year = rangeStart.getFullYear();
-        month = rangeStart.getMonth() + 1;
-        date = rangeStart.getDate();
-        const endMonth = rangeEnd.getMonth() + 1;
-        const endDate = rangeEnd.getDate();
-
-        const start = `${year}-${month < 10 ? '0' : ''}${month}-${date < 10 ? '0' : ''}${date}`;
-        const end = `${year}-${endMonth < 10 ? '0' : ''}${endMonth}-${
-          endDate < 10 ? '0' : ''
-        }${endDate}`;
-        dateRangeText = `${start} ~ ${end}`;
-        break;
-      }
-      default:
-        dateRangeText = `${year}-${month}-${date}`;
-    }
-
-    setSelectedDateRangeText(dateRangeText);
-  }, [getCalInstance]);
+export default function Calendar() {
+  const [events, setEvents] = useState([
+    { title: 'event 1', id: '1' },
+    { title: 'event 2', id: '2' },
+    { title: 'event 3', id: '3' },
+    { title: 'event 4', id: '4' },
+    { title: 'event 5', id: '5' },
+  ])
+  const [allEvents, setAllEvents] = useState<Event[]>([])
+  const [showModal, setShowModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [idToDelete, setIdToDelete] = useState<number | null>(null)
+  const [newEvent, setNewEvent] = useState<Event>({
+    title: '',
+    start: '',
+    allDay: false,
+    id: 0,
+  })
 
   useEffect(() => {
-    updateRenderRangeText();
-  }, [selectedView, updateRenderRangeText]);
-
-  useEffect(() => {
-    if (calendarRef.current) {
-      const calendar = new Calendar(calendarRef.current, {
-        defaultView: 'month',
-        taskView: true,
-        scheduleView: true,
-        useCreationPopup: true,
-        useDetailPopup: true,
-        template: {
-          monthDayname: (dayname) => `<span class="calendar-week-dayname-name">${dayname.label}</span>`,
+    let draggableEl = document.getElementById('draggable-el')
+    if (draggableEl) {
+      new Draggable(draggableEl, {
+        itemSelector: '.fc-event',
+        eventData: function (eventEl) {
+          let title = eventEl.getAttribute('title')
+          let id = eventEl.getAttribute('data')
+          let start = eventEl.getAttribute('start')
+          return { title, id, start }
         },
-      });
-
-      calendar.createEvents(initialEvents);
-
-      calendar.on('beforeCreateEvent', (eventData) => {
-        const event = {
-          id: String(Math.random()),
-          calendarId: eventData.calendarId || '',
-          title: eventData.title,
-          category: eventData.isAllday ? 'allday' : 'time',
-          start: eventData.start,
-          end: eventData.end,
-          isAllday: eventData.isAllday,
-          location: eventData.location,
-          state: eventData.state,
-          isPrivate: eventData.isPrivate,
-          dueDateClass: '',
-        };
-
-        calendar.createEvents([event]);
-      });
-
-      calendar.on('beforeDeleteEvent', ({ id, calendarId }) => {
-        calendar.deleteEvent(id, calendarId);
-      });
-
-      calendar.on('beforeUpdateEvent', ({ event, changes }) => {
-        const { id, calendarId } = event;
-        calendar.updateEvent(id, calendarId, changes);
-      });
-
-      setCalendarInstance(calendar);
-
-      return () => {
-        calendar.destroy();
-      };
+      })
     }
-  }, []);
+  }, [])
 
-  const onClickNavi = (ev: MouseEvent<HTMLButtonElement>) => {
-    if ((ev.target as HTMLButtonElement).tagName === 'BUTTON') {
-      const button = ev.target as HTMLButtonElement;
-      const actionName = (button.getAttribute('data-action') ?? 'month').replace('move-', '');
-      getCalInstance()?.[actionName]();
-      updateRenderRangeText();
+  function handleDateClick(arg: { date: Date; allDay: boolean }) {
+    setNewEvent({
+      ...newEvent,
+      start: arg.date,
+      allDay: arg.allDay,
+      id: new Date().getTime(),
+    })
+    setShowModal(true)
+  }
+
+  function addEvent(data: DropArg) {
+    const event = {
+      ...newEvent,
+      start: data.date.toISOString(),
+      title: data.draggedEl.innerText,
+      allDay: data.allDay,
+      id: new Date().getTime(),
     }
-  };
+    setAllEvents([...allEvents, event])
+  }
+
+  function handleDeleteModal(data: { event: { id: string } }) {
+    setShowDeleteModal(true)
+    setIdToDelete(Number(data.event.id))
+  }
+
+  function handleDelete() {
+    setAllEvents(allEvents.filter((event) => Number(event.id) !== Number(idToDelete)))
+    setShowDeleteModal(false)
+    setIdToDelete(null)
+  }
+
+  function handleCloseModal() {
+    setShowModal(false)
+    setNewEvent({
+      title: '',
+      start: '',
+      allDay: false,
+      id: 0,
+    })
+    setShowDeleteModal(false)
+    setIdToDelete(null)
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    setNewEvent({
+      ...newEvent,
+      title: e.target.value,
+    })
+  }
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setAllEvents([...allEvents, newEvent])
+    setShowModal(false)
+    setNewEvent({
+      title: '',
+      start: '',
+      allDay: false,
+      id: 0,
+    })
+  }
 
   return (
-    <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center space-x-2">
-          <select 
-            onChange={(ev: ChangeEvent<HTMLSelectElement>) => setSelectedView(ev.target.value as ViewType)} 
-            value={selectedView}
-            className="select select-bordered"
-          >
-            {viewModeOptions.map((option, index) => (
-              <option value={option.value} key={index}>
-                {option.title}
-              </option>
-            ))}
-          </select>
-          <span className="space-x-1">
-            <button
-              type="button"
-              className="btn btn-sm btn-outline"
-              data-action="move-today"
-              onClick={onClickNavi}
-            >
-              Today
-            </button>
-            <button
-              type="button"
-              className="btn btn-sm btn-outline"
-              data-action="move-prev"
-              onClick={onClickNavi}
-            >
-              Prev
-            </button>
-            <button
-              type="button"
-              className="btn btn-sm btn-outline"
-              data-action="move-next"
-              onClick={onClickNavi}
-            >
-              Next
-            </button>
-          </span>
+    <>
+      <div className="grid grid-cols-12 gap-4 p-4">
+        <div className="col-span-8">
+          <FullCalendar
+            plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin]}
+            headerToolbar={{
+              left: 'prev,next today',
+              center: 'title',
+              right: 'dayGridMonth,timeGridWeek,timeGridDay',
+            }}
+            events={allEvents as EventSourceInput}
+            nowIndicator={true}
+            editable={true}
+            droppable={true}
+            selectable={true}
+            selectMirror={true}
+            dateClick={handleDateClick}
+            drop={(data) => addEvent(data)}
+            eventClick={(data) => handleDeleteModal(data)}
+          />
         </div>
-        <span className="render-range">{selectedDateRangeText}</span>
+        <div id="draggable-el" className="col-span-4 p-4 bg-gray-100 rounded-md shadow-md">
+          <h1 className="font-bold text-lg text-center mb-4">Drag Event</h1>
+          {events.map((event) => (
+            <div
+              className="fc-event bg-white border rounded-md p-2 mb-2 text-center shadow-sm cursor-pointer"
+              title={event.title}
+              key={event.id}
+            >
+              {event.title}
+            </div>
+          ))}
+        </div>
       </div>
-      <div ref={calendarRef} className="h-[900px] bg-white rounded-lg shadow-md" />
-    </div>
-  );
-};
 
-export default MyCalendar;
+      <Transition.Root show={showDeleteModal} as={Fragment}>
+        <Dialog as="div" className="relative z-10" onClose={handleCloseModal}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 z-10 overflow-y-auto">
+            <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                enterTo="opacity-100 translate-y-0 sm:scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+                leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              >
+                <Dialog.Panel className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                  <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                    <div className="sm:flex sm:items-start">
+                      <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <ExclamationTriangleIcon className="h-6 w-6 text-red-600" aria-hidden="true" />
+                      </div>
+                      <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+                        <Dialog.Title as="h3" className="text-base font-semibold leading-6 text-gray-900">
+                          Delete Event
+                        </Dialog.Title>
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-500">Are you sure you want to delete this event?</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                    <button
+                      type="button"
+                      className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto"
+                      onClick={handleDelete}
+                    >
+                      Delete
+                    </button>
+                    <button
+                      type="button"
+                      className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                      onClick={handleCloseModal}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition.Root>
+
+      <Transition.Root show={showModal} as={Fragment}>
+        <Dialog as="div" className="relative z-10" onClose={handleCloseModal}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 z-10 overflow-y-auto">
+            <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                enterTo="opacity-100 translate-y-0 sm:scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+                leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              >
+                <Dialog.Panel className="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
+                  <div>
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+                      <CheckIcon className="h-6 w-6 text-green-600" aria-hidden="true" />
+                    </div>
+                    <div className="mt-3 text-center sm:mt-5">
+                      <Dialog.Title as="h3" className="text-base font-semibold leading-6 text-gray-900">
+                        Add Event
+                      </Dialog.Title>
+                      <form action="submit" onSubmit={handleSubmit}>
+                        <div className="mt-2">
+                          <input
+                            type="text"
+                            name="title"
+                            className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-violet-600 sm:text-sm sm:leading-6"
+                            value={newEvent.title}
+                            onChange={(e) => handleChange(e)}
+                            placeholder="Title"
+                          />
+                        </div>
+                        <div className="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+                          <button
+                            type="submit"
+                            className="inline-flex w-full justify-center rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 sm:col-start-2 disabled:opacity-25"
+                            disabled={newEvent.title === ''}
+                          >
+                            Create
+                          </button>
+                          <button
+                            type="button"
+                            className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0"
+                            onClick={handleCloseModal}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition.Root>
+    </>
+  )
+}
