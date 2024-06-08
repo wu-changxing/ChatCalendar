@@ -1,19 +1,10 @@
-// components/LoginComponent.tsx
-import { useEffect, useState } from 'react';
-import { getAuth, GoogleAuthProvider, signInWithPopup, User } from 'firebase/auth';
+// components/Login.tsx
+import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { app } from '../../../firebaseConfig';
+import useAuthStore from '../../../authStore'
 
 const LoginComponent: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    const auth = getAuth(app);
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user);
-    });
-
-    return () => unsubscribe();
-  }, []);
+  const setUser = useAuthStore((state) => state.setUser);
 
   const handleGoogleSignIn = async () => {
     const auth = getAuth(app);
@@ -45,17 +36,8 @@ const LoginComponent: React.FC = () => {
 
   return (
     <div>
-      {user ? (
-        <div>
-          <p>Welcome, {user.displayName}!</p>
-          <button onClick={handleSignOut}>Sign Out</button>
-        </div>
-      ) : (
-        <div>
-          <p>Please sign in to continue.</p>
-          <button onClick={handleGoogleSignIn}>Sign In with Google</button>
-        </div>
-      )}
+      <button onClick={handleGoogleSignIn}>Sign In with Google</button>
+      <button onClick={handleSignOut}>Sign Out</button>
     </div>
   );
 };
