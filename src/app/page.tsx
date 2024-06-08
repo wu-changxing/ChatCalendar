@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import '@toast-ui/calendar/dist/toastui-calendar.min.css';
 import LoginComponent from './components/Login';
 import useAuthStore from '../../authStore';
+import ImportHealthDataButton from './components/ImportHealthData'
 import Calendar from '@/app/components/Calendar'
 const MyCalendar = dynamic(() => import('@/app/components/Calendar'), { ssr: false });
 
@@ -23,6 +24,7 @@ export default function Home() {
       </header>
       {user && (
         <div className="w-full max-w-4xl bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+          <ImportHealthDataButton />
           <MyCalendar />
         </div>
       )}

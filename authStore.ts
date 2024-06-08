@@ -11,9 +11,12 @@ type AuthState = {
 };
 
 const useAuthStore = create<AuthState>((set) => ({
-  user: null,
+  user: JSON.parse(localStorage.getItem('user') || 'null'),
   loading: true,
-  setUser: (user) => set({ user }),
+  setUser: (user) => {
+    set({ user });
+    localStorage.setItem('user', JSON.stringify(user));
+  },
   setLoading: (loading) => set({ loading }),
 }));
 
@@ -23,7 +26,6 @@ export const initializeAuth = () => {
     useAuthStore.getState().setUser(user);
     useAuthStore.getState().setLoading(false);
   });
-
   return unsubscribe;
 };
 
