@@ -1,6 +1,6 @@
 // firebaseConfig.ts
 import { initializeApp, FirebaseApp, getApps } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
+import { getAuth, Auth,signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBLrH5vsJbU4TeSlaGepD4O-Njpl7tbM4A",
@@ -12,12 +12,31 @@ const firebaseConfig = {
   measurementId: "G-6LM0BVNJRB"
 };
 
+
+const provider = new GoogleAuthProvider();
+provider.addScope('https://www.googleapis.com/auth/calendar');
+
+const auth = getAuth();
+signInWithPopup(auth, provider)
+  .then((result) => {
+    // User signed in successfully
+    const user = result.user;
+    // You can access the user object here and get the access token
+    // user.getIdToken().then((accessToken) => {
+    //   // Use the access token to make API requests
+    // });
+  })
+  .catch((error) => {
+    // Handle sign-in errors
+    console.error('Error signing in:', error);
+  });
+
 let app: FirebaseApp;
-let auth: Auth;
+
 
 if (!getApps().length) {
   app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
+  
 }
 
 export { app, auth };

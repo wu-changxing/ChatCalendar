@@ -7,12 +7,16 @@ import useAuthStore from '../../authStore';
 import ImportHealthDataButton from './components/ImportHealthData'
 import Calendar from '@/app/components/Calendar'
 import { useEffect } from 'react'
+import GetEvents from './components/GetEvents'
+import '../../firebaseConfig';
+
 const MyCalendar = dynamic(() => import('@/app/components/Calendar'), { ssr: false });
 
 export default function Home() {
   const initializeUser = useAuthStore((state) => state.initializeUser);
 
   useEffect(() => {
+    
     initializeUser();
   }, [initializeUser]);
 
@@ -32,6 +36,7 @@ export default function Home() {
       {user && (
         <div className="w-full max-w-4xl bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
           <ImportHealthDataButton />
+          <GetEvents />
           <MyCalendar />
         </div>
       )}
