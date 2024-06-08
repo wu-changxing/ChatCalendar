@@ -6,9 +6,16 @@ import LoginComponent from './components/Login';
 import useAuthStore from '../../authStore';
 import ImportHealthDataButton from './components/ImportHealthData'
 import Calendar from '@/app/components/Calendar'
+import { useEffect } from 'react'
 const MyCalendar = dynamic(() => import('@/app/components/Calendar'), { ssr: false });
 
 export default function Home() {
+  const initializeUser = useAuthStore((state) => state.initializeUser);
+
+  useEffect(() => {
+    initializeUser();
+  }, [initializeUser]);
+
   const user = useAuthStore((state) => state.user);
 
   return (

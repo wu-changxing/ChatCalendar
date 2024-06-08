@@ -1,15 +1,15 @@
 // components/Login.tsx
 import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { app } from '../../../firebaseConfig';
-import useAuthStore from '../../../authStore'
+import useAuthStore from '../../../authStore';
 
 const LoginComponent: React.FC = () => {
+  const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
 
   const handleGoogleSignIn = async () => {
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
-
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
@@ -23,7 +23,6 @@ const LoginComponent: React.FC = () => {
 
   const handleSignOut = async () => {
     const auth = getAuth(app);
-
     try {
       await auth.signOut();
       setUser(null);
@@ -36,8 +35,14 @@ const LoginComponent: React.FC = () => {
 
   return (
     <div>
-      <button onClick={handleGoogleSignIn}>Sign In with Google</button>
-      <button onClick={handleSignOut}>Sign Out</button>
+      {user ? (
+        <div>
+          <p>Welcome, {user.displayName}!</p>
+          <button onClick={handleSignOut}>Sign Out</button>
+        </div>
+      ) : (
+        <button onClick={handleGoogleSignIn}>Sign In with Google</button>
+      )}
     </div>
   );
 };
