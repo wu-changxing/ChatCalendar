@@ -1,10 +1,10 @@
 interface Event {
-    title: string;
-    id: string;
+    title: string
+    id: string
   }
   
   interface DraggableEventsProps {
-    events: Event[];
+    events: Event[]
   }
   
   export default function DraggableEvents({ events }: DraggableEventsProps) {
