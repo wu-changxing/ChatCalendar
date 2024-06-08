@@ -1,4 +1,7 @@
 import Image from "next/image";
+import dynamic from 'next/dynamic';
+
+const MyCalendar = dynamic(() => import('@app/components/Calendar'), { ssr: false });
 
 export default function Home() {
   return (
@@ -107,6 +110,10 @@ export default function Home() {
             Instantly deploy your Next.js site to a shareable URL with Vercel.
           </p>
         </a>
+      </div>
+
+      <div className="w-full max-w-5xl mt-12">
+        <MyCalendar />
       </div>
     </main>
   );
